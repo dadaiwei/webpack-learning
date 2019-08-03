@@ -1,0 +1,6 @@
+@import "./style.css";
+@import "./style.scss";
+
+body {
+  background-image: "./img/small.png";
+}

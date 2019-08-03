@@ -1,0 +1,16 @@
+{
+  "name": "exp5",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.common.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server --open --config ./build/webpack.dev.js",
+    "build": "webpack -p --config ./build/webpack.prod.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^7.0.0-beta.3"
+  }
+}

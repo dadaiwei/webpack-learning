@@ -1,0 +1,20 @@
+h1 {
+  color: green;
+  border: 1px solid red;
+  border-radius: 2px;
+  font-size: 40px !important;
+}
+
+body {
+  background-color: blue;
+  h1 {
+    font-size: 20px;
+  }
+}
+
+body {
+  background-image: "./img/small.png";
+}
+
+
+/*# sourceMappingURL=bundle3.5b3da15.css.map*/

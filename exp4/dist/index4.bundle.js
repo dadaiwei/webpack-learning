@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[2],{"./src/js/index4.js":function(e,n,s){"use strict";Object.defineProperty(n,"__esModule",{value:!0}),n.default={name:"dada",age:28}}}]);

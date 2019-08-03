@@ -1,0 +1,1 @@
+{"version":3,"sources":["webpack:///./src/js/js4.js"],"names":["name","age"],"mappings":"mJAAe,CACbA,KAAM,OACNC,IAAK","file":"common1.5b3da15.js","sourcesContent":["export default {\r\n  name: \"dada\",\r\n  age: 28\r\n};\r\n"],"sourceRoot":""}

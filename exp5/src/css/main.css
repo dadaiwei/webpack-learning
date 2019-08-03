@@ -1,0 +1,23 @@
+@font-face {
+  font-family: 'MyFont';
+  src: url('../font/icomoon.eot') format('eot'),
+    + url('../font/icomoon.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+}
+
+body {
+  font-family: 'MyFont';
+  background-color: #ffffff;
+}
+
+.div1 {
+  height: 200px;
+  width: 200px;
+  background-color: blue;
+}
+
+div.div1 {
+  background-color: green;
+  transform: translate(50px, 50px);
+}
