@@ -4,6 +4,8 @@
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;webpack 作为前端领域的模块化打包工具，相信大家都不陌生。现在很火的 react 和 vue 的一些脚手架都是基于 webpack 开发定制的，因此，了解并会配置 webpack 还是很有必要的（文章基于 webpack4.x 版本来讲解）。
 
+PS：文章内容可能有点长，大家提前做好心理准备。
+
 ## 1.webpack 是什么
 
 **官方定义**：
@@ -60,7 +62,7 @@ module.exports = {
 
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;webpack 有五个概念：入口(entry)、输出(output)、模式（mode）、loader、插件(plugins)。
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;webpack 有五个核心概念：入口(entry)、输出(output)、模式（mode）、loader、插件(plugins)。
 
 ## 2.1.入口（entry）
 
@@ -406,5 +408,254 @@ module.exports = {
 > **项目中 css 等非 js 文件抽离最好使用 contenthash。**
 
 ### 2.3.模式（mode）
+
+webpack 提供了 mode 配置选项，用来选择使用响应的内置优化，不配置 mode 选项时，默认使用 production 模式。
+
+mode 选项有 3 个可选值：production（生产模式、默认）、development、none。
+
+#### 2.3.1.production 模式
+
+production 模式下，会自动开启 Tree Shaking（去除无用代码）和文件压缩（UglifyJs）。
+
+在 fun.js 中定义了 2 个函数
+
+```
+export function f1() {
+  console.log("f1");
+}
+
+export function f2() {
+  console.log("f2");
+}
+```
+
+在 app.js 中只引入了 f1
+
+```
+import { f1 } from "./fun";
+
+f1();
+```
+
+production 模式打包，查看打包后的文件，只引入了 f1，并且代码进行了压缩。
+
+![production模式打包](./image/production模式打包.png)
+
+#### 2.3.2.development 模式
+
+development 模式下，webpack 会启用 NamedChunksPlugin 和 NamedModulesPlugin 插件。
+
+同样的代码，development 模式下打包，将 f1 和 f2 都一起打包了，而且代码并没有进行压缩。
+
+![development模式下打包](./image/development模式下打包.png)
+
+#### 2.3.3.none 模式
+
+none 模式下，webpack 不会使用任何内置优化，这种模式很少使用。
+
+### 2.4.loader
+
+loader 用于对模块的源代码进行转换。loader 可以实现文件内容的转换，比如将 es6 语法转换为 es5 语法，将 scss 转换为 css 文件，将 image 转换为 base 64 位编码。一般 loaderp 配置在 module 的 rules 选项中。
+
+常用的 loader 有：
+
+- 处理 js/jsx/ts
+  <br>
+  bebel-loader：将代码转换为 ES5 代码
+  <br>
+  ts-loader：将 ts 代码转换为 js 代码
+- 处理样式
+  <br>
+  style-loader：将模块的导出作为样式添加到 DOM style 中
+  <br>
+  css-loader：解析 css 文件后，使用 import 加载，并且返回 CSS 代码
+  <br>
+  less-loader：加载和转译 less 文件
+  <br>
+  sass-loader：加载和转译 sass/scss 文件
+- 文件转换
+  <br>
+  file-loader：将文件发送到输出文件夹，返回相对 url，一般用于处理图片、字体
+  <br>
+  url-loader：和 file-loader 功能一样，但如果文件小于限制，返回 data URL，常用于图片 base 64 转换
+
+下面就以 scss 转换的例子，描述如何使用 loader
+
+app.js 中引入了 main.scss 文件
+
+```
+// app.js
+
+import "./css/main.scss";
+```
+
+webpack 配置如下
+
+```
+const path = require("path");
+const miniCssExtractPlugin = require("mini-css-extract-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+
+module.exports = {
+  mode: "development",
+  entry: {
+    app: "./src/app.js"
+  },
+  module: { // 针对项目中不同类型模块的处理
+    rules: [ // 匹配请求的规则数组
+      {
+        test: /\.scss$/, // 检测scss文件结尾的文件
+        exclude: /node_modules/, // 排除查找范围
+        include: [path.resolve(__dirname, "src/css")], // 限定查找范围
+        use: [miniCssExtractPlugin.loader, "css-loader", "sass-loader"] // loader链式调用，从最右边向左处理
+      }
+    ]
+  },
+  output: {
+    filename: "[name].[chunkhash].js",
+    path: path.resolve(__dirname, "dist")
+  },
+  plugins: [
+    new CleanWebpackPlugin(), // 清空dist目录
+    new miniCssExtractPlugin({
+      // 抽离css文件
+      filename: "css/style.[contenthash].css"
+    })
+  ]
+};
+
+```
+
+其中，sass-loader 用于将 scss 文件编译成 css 文件，css-loader 用于解释 import()，miniCssExtractPlugin 用于将 css 抽离到单独的文件中。
+
+关于 loader 有几点说明：
+
+1.loader 支持链式调用，一组链式 loader 按照相反的顺序执行，loader 链中的前一个 loader 返回值给下一个 loader，最后一个 loader 输出文件。
+<br>
+上面例子中，loader 执行顺序：sass-loader => css-loader => miniCssExtractPlugin.loader。
+
+2.loader 可以使用 options 对象进行配置，像下面这样：
+
+```
+module: {
+    //
+    rules: [
+      {
+        test: /\.scss$/, // 检测scss文件结尾的文件
+        exclude: /node_modules/, // 排除查找范围
+        include: [path.resolve(__dirname, "src/css")], // 限定查找范围
+        use: [
+          miniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+            options: {
+              modules: true
+            }
+          },
+          "sass-loader"
+        ] // loader链式调用，从最右边向左处理
+      }
+    ]
+  },
+```
+
+### 2.5.plugins（插件）
+
+插件是 webpack 的支柱功能，旨在解决 loader 无法实现的其他事。插件可以携带参数，配置插件需要向 plugins 数组中传入 new 实例。
+
+常用的插件有：
+
+clean-webpack-plugin：清空 dist 文件夹
+<br>
+clean-webpack-plugin：生成 html 文件
+<br>
+mini-css-extract-plugin：抽离 css 文件
+<br>
+optimize-css-assets-webpack-plugin：优化和压缩 css
+<br>
+css-split-webpack-plugin：针对 css 大文件进行拆分
+<br>
+webpack-bundle-analyzer：webpack 打包结果分析
+<br>
+webpack.DllPlugin：创建 dll 文件和 manifest 文件
+<br>
+webpack.DllReferencePlugin：把只有 dll 的 bundle 引用到需要的预编译的依赖。
+<br>
+SplitChunksPlugin：拆分代码块，在 optimization.splitChunks 中配置。
+
+下面以 html-webpack-plugin 为例说明 plugins 的用法，这里只列出 plugins 部分的配置
+
+```
+plugins: [
+    new CleanWebpackPlugin(), // 清空dist目录
+    new miniCssExtractPlugin({
+      // 抽离css文件
+      filename: "css/style.[contenthash].css"
+    }),
+    new HtmlWebpackPlugin({ // 生成插件实例
+      filename: "index.html", // 生成模板的名称
+      minify: {
+        collapseWhitespace: true, // 去除空格
+        minifyCSS: true, // 压缩css
+        minifyJS: true, // 压缩js
+        removeComments: true, // 移除注释
+        removeEmptyElements: true, // 移除空元素
+        removeScriptTypeAttributes: true, // 移除script type属性
+        removeStyleLinkTypeAttributes: true // 移除link type属性
+      }
+    })
+  ]
+```
+
+打包后，生成了 index.html 文件
+
+![html-webpack-plugin1](./image/html-webpack-plugin1.png)
+
+打开 index.html，看到 css 和 js 文件被引入了
+
+![html-webpack-plugin2](./image/html-webpack-plugin2.png)
+
+接下来描述 webpack 其他常用的一些配置 resolve、devServer、devtool。
+
+### 2.6.resolve（解析）
+
+resolve 选项设置模块如何被解析。
+
+#### 2.6.1.alias
+
+创建 import 或 require 的别名，确保模块引入变得简单。
+
+下面的例子针对 css、util 文件夹 设置了 alias 别名，引入文件夹下面的文件可以直接使用相对地址。
+
+```
+resolve: {
+    alias: {
+      css: path.resolve(__dirname, "src/css"),
+      util: path.resolve(__dirname, "src/util")
+    }
+  },
+```
+
+app.js 文件中引入 util 文件夹下的 common.js 文件，就会引入 src/util/common.js 文件。
+
+```
+import fun1 from "util/common.js";
+```
+
+#### 2.6.2.extensions
+
+自动解析引入模块的扩展，按照从左到右的顺序解析。
+
+```
+resolve: {
+  extensions: [".js", ".json"]
+}
+```
+
+在 app.js 中引入 common.js 可以不携带后缀，由 webpack 自动解析。
+
+```
+import fun1 from "util/common";
+```
 
 ## 3.webpack 实践
