@@ -658,4 +658,132 @@ resolve: {
 import fun1 from "util/common";
 ```
 
+#### 2.6.3.mainFiles
+
+解析目录时要使用的文件名，默认
+
+```
+mainFiles: ["index"]
+```
+
+也可以指定多个 mainFiles，会依次从左到右解析
+
+```
+mainFiles: ["index", "main"]
+```
+
+比如需要从 util 文件夹下引入 index.js 文件，import 只需要导入到 util 文件夹，webpack 会自动从 util 文件夹下引入 index.js 文件。
+
+```
+import index from "util";
+```
+
+> **extentsion 和 mainFiles 属性虽然会方便开发者简写，但是会增加 webpack 额外的解析时间。**
+
+### 2.7.devServer
+
+devServer 主要用于 development 模式配置本地开发服务器，需要安装 webpack-dev-server。
+
+```
+npm i webpack-dev-server -g
+```
+
+devServer 常用的配置项如下：
+
+```
+devServer: {
+    contentBase: path.resolve(__dirname, "dist"), // 告诉服务器从哪里提供内容
+    host: "localhost", // 制定一个host，默认localhost
+    port: 3000, // 请求端口号，默认8080
+    compress: true, // 启用gzip压缩
+    https: true, // 开启http服务
+    hot: true, // 启用模块热替换
+    open: true, // 自动打开默认浏览器
+    index: "index.html", // 页面入口html文件，默认index.html
+    headers: {
+      // 所有响应中添加首部内容
+      "X-Custom-Foo": "bar"
+    },
+    proxy: {
+      "/api": "http://localhost:3000"
+    }
+  }
+```
+
+读取配置文件，启动开发服务器。
+
+```
+webpack-dev-server --config webpack.dev.js
+```
+
+### 2.8.devtool
+
+source map 一个存储源代码与编译代码对应位置的映射信息文件，它是专门给调试器准备的，它主要用于 debug。
+
+webpack 通过配置 devtool 属性来选择一种 source map 来增强调试过程。
+
+以下是官方对于 devtool 的各种 source map 的比较：
+
+![devtool](./image/devtool.png)
+
+> **development 模式下 devtool 设置为 cheap-module-eval-source-map，production 模式下 devtool 设置为 souce-map。**
+
 ## 3.webpack 实践
+
+接下来将通过一个完整的例子实现 react 项目的完整 webpack 配置。
+先全局安装 webpack 和 webpack-dev-server。
+
+```
+npm i webpack webpack-dev-server -g
+```
+
+### 3.1.配置执行文件
+
+新建一个目录，结构如下：
+
+![目录完整结构](./image/目录完整结构.png)
+
+其中 public 文件夹下包含 index.html 入口 html 文件，src 文件夹下包含 index.js 入口 js 文件，css 文件夹、font 文件夹、image 文件夹。
+
+webpack 配置如下：
+
+```
+// webpack.config.js
+
+const path = require("path");
+
+module.exports = {
+  entry: "./src/index.js",
+  output: {
+    filename: "[name].[chunkhash:7].js",
+    path: path.resolve(__dirname, "dist")
+  }
+};
+```
+
+在目录下使用`npm init`新建 package.json 文件，设置 dev 和 build 的 script，
+分别用于开发模式和生产模式。
+
+![package.json](./image/package.json.png)
+
+### 3.1.处理 jsx、es6
+
+在 react 项目中，我们使用 jsx 和 es6 语法，为了兼容低版本浏览器，需要通过 babel 转换。
+
+### 3.2.配置 html 模板
+
+### 3.3.处理 css、scss 文件
+
+### 3.4.处理图片、字体文件
+
+### 3.5.配置 devServer
+
+### 3.6.提取公共代码
+
+### 3.7.分离 webpack 配置文件
+
+### 3.8.扩展：如何编写一个 loader
+
+### 3.9.扩展：如何实现一个 plugin
+
+### 3.10.webpack 相关优化
