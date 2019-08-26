@@ -1436,3 +1436,15 @@ module.exports = merge(baseConfig, {
 执行`npm run dev`，启动开发者模式，运行在 localhost:3000。
 
 ![开发成功](./image/开发成功.png)
+
+到此为止，我们的案例就完成了。
+
+代码地址：[案例链接](https://github.com/dadaiwei/webpack-learning/tree/master/webpack-compltete-practice)
+
+## 结语
+
+看完这篇文章，相信大家对于 webpack 已经有了一个初步的了解，学习 webpack 最好的方式还是多动手实践，觉得不错的小伙伴可以点个赞（码字不易，灰常感谢）。
+
+## 相关链接
+
+webpack 官方链接：https://www.webpackjs.com/

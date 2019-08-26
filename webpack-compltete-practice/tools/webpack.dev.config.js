@@ -9,6 +9,7 @@ module.exports = merge(baseConfig, {
     contentBase: path.join(__dirname, "../dist"),
     host: "localhost",
     port: 3000,
+    open: true, // 自动打开浏览器
     compress: true, // 启用gzip压缩
     hot: true,
     inline: true // 启用内联模式
