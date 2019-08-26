@@ -42,17 +42,5 @@ module.exports = {
       title: "webpack is good",
       template: "./src/index.html"
     })
-    // new BundleAnalyzerPlugin({
-    //   analyzerMode: "server",
-    //   analyzerHost: "127.0.0.1",
-    //   analyzerPort: 8888, // 运行后的端口号
-    //   reportFilename: "report.html",
-    //   defaultSizes: "parsed",
-    //   openAnalyzer: true,
-    //   generateStatsFile: false,
-    //   statsFilename: "stats.json",
-    //   statsOptions: null,
-    //   logLevel: "info"
-    // })
   ]
 };

@@ -770,20 +770,669 @@ module.exports = {
 
 在 react 项目中，我们使用 jsx 和 es6 语法，为了兼容低版本浏览器，需要通过 babel 转换。
 
+先安装 babel 相关依赖包
+
+```
+npm i babel-loader @babel/core @babel/preset-env  @babel/plugin-transform-runtime  @babel/preset-react @babel/polyfill @babel/runtime -D
+```
+
+babel-loader：处理 ES6 语法，将其编译为浏览器可以执行的 js 语法
+<br>
+@babel/core-babel：babel 核心模块
+<br>
+@babel/preset-env：转换 es6 语法，支持最新的 javaScript 语法
+<br>
+@babel/preset-react：转换 jsx 语法
+<br>
+@babel/plugin-transform-runtime: 避免 polyfill 污染全局变量，减小打包体积
+<br>
+@babel/polyfill: ES6 内置方法和函数转化垫片
+
+将 index.js 作为入口文件，引入 App.jsx 组件
+
+```
+//index.js
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./views/App";
+console.log(App);
+
+ReactDOM.render(<App />, document.getElementById("root"));
+
+//App.jsx
+import React, { Component } from "react";
+
+class App extends Component {
+  render() {
+    return <h2>This is a react app.</h2>;
+  }
+}
+
+export default App;
+```
+
+webpack 配置如下:
+
+```
+const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin"); // clean-webpack-plugin用来清空dist文件夹
+
+module.exports = {
+  mode: "production",
+  entry: {
+    app: "./src/index.js"
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "babel-loader"
+          }
+        ]
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".jsx", ".js"]
+  },
+  output: {
+    filename: "[name].[chunkhash:7].js",
+    path: path.resolve(__dirname, "dist")
+  },
+  plugins: [new CleanWebpackPlugin()]
+};
+```
+
+> **clean-webpack-plugin：清空 dist 文件夹**
+
+新建.babelrc 文件
+
+```
+{
+  "presets": ["@babel/preset-env", "@babel/preset-react"],
+  "plugins": ["@babel/plugin-transform-runtime"]
+}
+```
+
+执行`npm run build`，打包成功，在 dist 文件夹下生成了 app.js 文件
+
+![jsx转换](./image/jsx转换.png)
+
 ### 3.2.配置 html 模板
 
-### 3.3.处理 css、scss 文件
+配置 html 模板表示配置 index.html 文件相关配置，将打包后的文件引入到 index.html 文件，通过 html-webpack-plugin 插件实现。
+
+先安装 html-webpack-plugin 插件
+
+```
+npm i html-webpack-plugin -D
+```
+
+webpack 配置如下：
+
+```
+const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin"); // 引入html-webpack-plugin插件
+
+module.exports = {
+  mode: "production",
+  entry: {
+    app: "./src/index.js"
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "babel-loader"
+          }
+        ]
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".jsx", ".js"]
+  },
+  output: {
+    filename: "[name].[chunkhash:7].js",
+    path: path.resolve(__dirname, "dist")
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      filename: "index.html", // 模板文件名
+      template: path.resolve(__dirname, "public/index.html"), // 模板文件源
+      minify: {
+        collapseWhitespace: true, // 压缩空格
+        minifyCSS: true, // 压缩css
+        minifyJS: true, // 压缩js
+        removeComments: true, // 移除注释
+        caseSensitive: true, // 去除大小写
+        removeScriptTypeAttributes: true, // 移除script的type属性
+        removeStyleLinkTypeAttributes: true // 移除link的type属性
+      }
+    })
+  ]
+};
+```
+
+执行 npm run build，打包成功，在 dist 文件夹下生成了 index.html 和 app.js 打包文件
+
+![模板配置](./image/模板配置.png)
+
+打开 index.html，引入了 app.js 打包文件
+
+![](./image/模板配置index.html.png)
+
+### 3.3.编译 css、scss
+
+在 index.js 中引入 main.scss 文件
+
+```
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./views/App";
+import "./css/main.scss";
+
+ReactDOM.render(<App />, document.getElementById("root"));
+```
+
+当在 js 文件中引入 css/scss 文件时，需要经过 loader 转换，才能引入到 index.html 文件中。
+
+安装相关依赖包
+
+```
+npm i css-loader sass-loader node-sass mini-css-extract-plugin optimize-css-assets-webpack-plugin css-split-webpack-plugin -D
+```
+
+sass-loader：将 scss/sass 文件编译为 css
+<br>
+css-loader：解析 import/require 导入的 css 文件
+<br>
+mini-css-extract-plugin：将 js 中引入的 css 文件抽离成单独的 css 文件
+<br>
+optimize-css-assets-webpack-plugin：优化和压缩 css 文件
+<br>
+css-split-webpack-plugin：css 文件拆分
+
+webpack 配置如下：
+
+```
+const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
+const CSSSplitWebpackPlugin = require("css-split-webpack-plugin").default;
+
+module.exports = {
+  mode: "production",
+  entry: {
+    app: "./src/index.js"
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        use: ["babel-loader"]
+      },
+      {
+        test: /\.(sa|sc|c)ss$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".jsx", ".js"]
+  },
+  output: {
+    filename: "[name].[chunkhash:7].js",
+    path: path.resolve(__dirname, "dist")
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new MiniCssExtractPlugin({
+      filename: "css/[name].[hash:7].css",
+      chunkFilename: "[id].css"
+    }),
+    new OptimizeCSSAssetsPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcessor: require("cssnano"), // //引入cssnano配置压缩选项
+      cssProcessorPluginOptions: {
+        preset: [
+          "default",
+          {
+            discardComments: {
+              // 移除注释
+              removeAll: true
+            },
+            normalizeUnicode: false
+          }
+        ]
+      },
+      canPrint: true
+    }),
+    new CSSSplitWebpackPlugin({
+      size: 4000, // 超过4kb的css文件进行拆分
+      filename: "[name]-[part].[ext]"
+    }),
+    new HtmlWebpackPlugin({
+      filename: "index.html", // 模板文件名
+      template: path.resolve(__dirname, "public/index.html"), // 模板文件源
+      minify: {
+        collapseWhitespace: true, // 压缩空格
+        minifyCSS: true, // 压缩css
+        minifyJS: true, // 压缩js
+        removeComments: true, // 移除注释
+        caseSensitive: true, // 去除大小写
+        removeScriptTypeAttributes: true, // 移除script的type属性
+        removeStyleLinkTypeAttributes: true // 移除link的type属性
+      }
+    })
+  ]
+};
+```
+
+执行`npm run build`，在 dist 文件夹下生成了 css 文件夹和编译的 css 文件
+
+![编译css、scss文件](./image/编译css、scss文件.png)
+
+打开 index.html，css 文件被引入到 index.html 中。
+
+![编译css、scss到index.html](./image/编译css、scss到index.html.png)
 
 ### 3.4.处理图片、字体文件
 
+在 index.js 中引入图片，在 main.scss 文件中引入字体库
+
+```
+// index.js
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./views/App";
+import "./css/main.scss";
+import image from "./image/image1.png";
+
+const newImage = new Image();
+newImage.src = image;
+newImage.style.cssText = "width: 100px; height: 100px;";
+document.body.append(newImage);
+
+ReactDOM.render(<App />, document.getElementById("root"));
+```
+
+在 main.scss 文件中引入字体库
+
+```
+// main.scss
+@font-face {
+  font-family: 'MyFont';
+  src: url('../font/icomoon.eot') format('eot'),
+    + url('../font/icomoon.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+}
+
+body {
+  background-color: blue;
+}
+```
+
+当在 js 文件中引入图片或字体文件时，需要通过 url-loader 和 file-loader 来处理。
+
+file-loader：解析 import/require 导入的文件，将其输出到生产目录，并产生一个 url 地址。
+<br>
+url-loader：不超过限定 limit 时，转换为 base64 url。
+
+安装 file-loader 和 url-loader
+
+```
+npm i url-loader file-loader -D
+```
+
+webpack module 部分配置如下：
+
+```
+...
+module: {
+  ...
+  rules: [
+    {
+        test: /\.(png|jpg|jpeg|gif|svg)/,
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              name: "[name]_[hash].[ext]",
+              outputPath: "images/",
+              limit: 204800 // 小于200kb，进行base64转码
+            }
+          }
+        ]
+      },
+      {
+        test: /\.(eot|woff2?|ttf)/,
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              name: "[name]-[hash:5].min.[ext]",
+              limit: 5000,
+              outputPath: "fonts/"
+            }
+          }
+        ]
+      }
+  ]
+  ...
+}
+...
+```
+
+执行`npm run build`打包，在 dist 目录下生成了 image 文件夹和 font 文件夹
+
+![图片字体转换](./image/图片字体转换.png)
+
+打开 index.html，图片成功引入
+
+![图片字体转换](./image/图片字体转换index.html.png)
+
 ### 3.5.配置 devServer
+
+webpack-dev-server 就是在本地为搭建了一个小型的静态文件服务器，有实时重加载的功能，为将打包生成的资源提供了 web 服务，适用于本地开发模式。
+
+```
+ devServer: {
+    contentBase: path.join(__dirname, "../dist"), // 资源目录
+    host: 'localhost', // 默认localhost
+    port: 3000, // 默认8080
+    hot: true, // 支持热更新
+    inline: true
+  }
+```
+
+执行`npm run dev`，web 服务起在 localhost:3000
+
+![devServer配置](./image/devServer配置.png)
 
 ### 3.6.提取公共代码
 
+当我们在代码里引入了第三方库和公共代码时，可以使用 splitChunks 提取公共代码时，避免加载的包太大。
+
+webpack 配置如下：
+
+```
+...
+optimization: {
+    splitChunks: {
+      // 提取公共代码
+      chunks: "all", //  async(动态加载模块)，initital（入口模块），all（全部模块入口和动态的）
+      minSize: 3000, // 抽取出来的文件压缩前最小大小
+      maxSize: 0, // 抽取出来的文件压缩前的最大大小
+      minChunks: 1, // 被引用次数,默认为1
+      maxAsyncRequests: 5, // 最大的按需(异步)加载次数，默认为 5；
+      maxInitialRequests: 3, // 最大的初始化加载次数，默认为 3；
+      automaticNameDelimiter: "~", // 抽取出来的文件的自动生成名字的分割符，默认为 ~；
+      name: "vendor/vendor", // 抽取出的文件名，默认为true，表示自动生成文件名
+      cacheGroups: {
+        // 缓存组
+        common: {
+          // 将node_modules模块被不同的chunk引入超过1次的抽取为common
+          test: /[\\/]node_modules[\\/]/,
+          name: "common",
+          chunks: "initial",
+          priority: 2,
+          minChunks: 2
+        },
+        default: {
+          reuseExistingChunk: true, // 避免被重复打包分割
+          filename: "common.js", // 其他公共函数打包成common.js
+          priority: -20
+        }
+      }
+    }
+  },
+  ...
+```
+
+执行`npm run build`，在 dist 文件夹下生成了 vendor.js 包
+
+![提取公共代码](./image/提取公共代码.png)
+
+打开 index.html，vendor.js 成功引入
+
+![提取公共代码index.html](./image/提取公共代码index.html.png)
+
 ### 3.7.分离 webpack 配置文件
 
-### 3.8.扩展：如何编写一个 loader
+由于开发环境和生产环境下的 webpack 配置存在公共配置，因此最好将公共配置抽离成 webpack.common.js，然后针对开发环境和生产环境分别配置，通过 webpack-merge merge 配置，即可满足开发环境和生产环境不同的配置。
 
-### 3.9.扩展：如何实现一个 plugin
+先安装 webpack-merge，用来 merge webpack 配置项
 
-### 3.10.webpack 相关优化
+```
+npm i webpack-merge -D
+```
+
+在目录下新建 tools 文件夹，存放 webpack 相关配置
+
+![建立tools文件夹](./image/建立tools文件夹.png)
+
+新建 pathConfig.js 文件，返回 entry js、output 目录及 index.html 模板目录的绝对地址
+
+```
+// pathConfig.js
+const path = require("path");
+const fs = require("fs");
+
+const appDirectory = fs.realpathSync(process.cwd()); // 获取当前根目录
+const resolvePath = (relativePath) => path.resolve(appDirectory, relativePath);
+
+module.exports = {
+  appHtml: resolvePath("public/index.html"), // 模板html
+  appBuild: resolvePath("dist"), // 打包目录
+  appIndexJs: resolvePath("src/index.js") // 入口js文件
+};
+```
+
+webpack 公共配置，引入 pathConfig.js 文件
+
+```
+// webpack.common.js
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
+const CSSSplitWebpackPlugin = require("css-split-webpack-plugin").default;
+const { appIndexJs, appBuild, appHtml } = require("./pathConfig");
+
+module.exports = {
+  entry: {
+    app: appIndexJs
+  },
+  output: {
+    filename: "[name].[hash:7].js",
+    path: appBuild
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js[x]?$/, // jsx、js处理
+        exclude: /node_modules/,
+        use: ["babel-loader"]
+      },
+      {
+        test: /\.(sa|sc|c)ss$/, // scss、css处理
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
+      },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)/, // 图片处理
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              name: "[name]_[hash].[ext]",
+              outputPath: "images/",
+              limit: 204800 // 小于200kb采用base64转码
+            }
+          }
+        ]
+      },
+      {
+        test: /\.(eot|woff2?|ttf)/, // 字体处理
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              name: "[name]-[hash:5].min.[ext]",
+              limit: 5000, // 5kb限制
+              outputPath: "fonts/"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  resolve: {
+    extensions: [".jsx", ".js"]
+  },
+  optimization: {
+    splitChunks: {
+      // 提取公共代码
+      chunks: "all", //  async(动态加载模块)，initital（入口模块），all（全部模块入口和动态的）
+      minSize: 3000, // 抽取出来的文件压缩前最小大小
+      maxSize: 0, // 抽取出来的文件压缩前的最大大小
+      minChunks: 1, // 被引用次数,默认为1
+      maxAsyncRequests: 5, // 最大的按需(异步)加载次数，默认为 5；
+      maxInitialRequests: 3, // 最大的初始化加载次数，默认为 3；
+      automaticNameDelimiter: "~", // 抽取出来的文件的自动生成名字的分割符，默认为 ~；
+      name: "vendor/vendor", // 抽取出的文件名，默认为true，表示自动生成文件名
+      cacheGroups: {
+        // 缓存组
+        common: {
+          // 将node_modules模块被不同的chunk引入超过1次的抽取为common
+          test: /[\\/]node_modules[\\/]/,
+          name: "common",
+          chunks: "initial",
+          priority: 2,
+          minChunks: 2
+        },
+        default: {
+          reuseExistingChunk: true, // 避免被重复打包分割
+          filename: "common.js", // 其他公共函数打包成common.js
+          priority: -20
+        }
+      }
+    }
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new MiniCssExtractPlugin({
+      filename: "css/[name].[hash:7].css",
+      chunkFilename: "[id].css"
+    }),
+    new OptimizeCSSAssetsPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcessor: require("cssnano"), // //引入cssnano配置压缩选项
+      cssProcessorPluginOptions: {
+        preset: [
+          "default",
+          {
+            discardComments: {
+              // 移除注释
+              removeAll: true
+            },
+            normalizeUnicode: false
+          }
+        ]
+      },
+      canPrint: true
+    }),
+    new CSSSplitWebpackPlugin({
+      size: 4000, // 超过4kb进行拆分
+      filename: "[name]-[part].[ext]"
+    }),
+    new HtmlWebpackPlugin({
+      filename: "index.html", // 模板文件名
+      template: appHtml, // 模板文件源
+      minify: {
+        collapseWhitespace: true, // 压缩空格
+        minifyCSS: true, // 压缩css
+        minifyJS: true, // 压缩js
+        removeComments: true, // 移除注释
+        caseSensitive: true, // 去除大小写
+        removeScriptTypeAttributes: true, // 移除script的type属性
+        removeStyleLinkTypeAttributes: true // 移除link的type属性
+      }
+    })
+  ]
+};
+```
+
+开发环境 webpack 配置
+
+```
+// webpack.dev.config.js
+const path = require("path");
+const merge = require("webpack-merge");
+const baseConfig = require("./webpack.config");
+
+module.exports = merge(baseConfig, {
+  mode: "development",
+  devtool: "cheap-module-eval-source-map",
+  devServer: {
+    contentBase: path.join(__dirname, "../dist"),
+    port: 3000,
+    historyApiFallback: true,
+    hot: true,
+    inline: true
+  }
+});
+```
+
+生产环境配置，启用 webpack-bundle-analyzer 进行打包分析，启用 compression-webpack-plugin 生成 gzip 压缩。
+
+```
+// webpack.prod.config.js
+const merge = require("webpack-merge");
+const baseConfig = require("./webpack.com.config");
+const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
+const CompressionWebpackPlugin = require("compression-webpack-plugin");
+
+module.exports = merge(baseConfig, {
+  mode: "production",
+  devtool: "source-map",
+  plugins: [
+    new CompressionWebpackPlugin({
+      filename: "[path].gz[query]", // path-原资源路径，query-原查询字符串
+      algorithm: "gzip", // 压缩算法
+      threshold: 0, // 文件压缩阈值
+      minRatio: 0.8 // 最小压缩比例
+    }),
+    new BundleAnalyzerPlugin()
+  ]
+});
+```
+
+修改 package.json 中 script 中 dev 和 build，--config 表示读取后面的文件作为配置文件。
+
+```
+ "scripts": {
+    "dev": "webpack-dev-server --config ./tools/webpack.dev.config.js",
+    "build": "webpack --config ./tools/webpack.prod.config.js"
+  },
+```
+
+执行`npm run build`，项目打包成功
+
+![打包成功](./image/打包成功.png)
+
+执行`npm run dev`，启动开发者模式，运行在 localhost:3000。
+
+![开发成功](./image/开发成功.png)

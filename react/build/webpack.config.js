@@ -46,7 +46,7 @@ module.exports = {
         ]
       },
       {
-        test: /\.(eot|woff2?|ttf|svg)/,
+        test: /\.(eot|woff2?|ttf)/,
         use: [
           {
             loader: "url-loader",
