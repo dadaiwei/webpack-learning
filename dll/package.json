@@ -5,8 +5,8 @@
   "main": "webpack.dll.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack -p",
-    "build:dll": "webpack --config webpack.dll.js"
+    "build": "webpack --config webpack.config.js",
+    "dll": "webpack --config webpack.dll.js"
   },
   "author": "",
   "license": "ISC"
